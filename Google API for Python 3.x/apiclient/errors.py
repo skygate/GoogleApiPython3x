@@ -38,7 +38,7 @@ class HttpError(Error):
   @util.positional(3)
   def __init__(self, resp, content, uri=None):
     self.resp = resp
-    self.content = content
+    self.content = content.decode(encoding='UTF-8')
     self.uri = uri
 
   def _get_reason(self):
