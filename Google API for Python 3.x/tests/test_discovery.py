@@ -30,12 +30,13 @@ import os
 import pickle
 import sys
 import unittest
-import urlparse
-import StringIO
+import urllib.parse
+import io
+import collections
 
 
 try:
-  from urlparse import parse_qs
+  from urllib.parse import parse_qs
 except ImportError:
   from cgi import parse_qs
 
@@ -78,8 +79,8 @@ util.positional_parameters_enforcement = util.POSITIONAL_EXCEPTION
 
 def assertUrisEqual(testcase, expected, actual):
   """Test that URIs are the same, up to reordering of query parameters."""
-  expected = urlparse.urlparse(expected)
-  actual = urlparse.urlparse(actual)
+  expected = urllib.parse.urlparse(expected)
+  actual = urllib.parse.urlparse(actual)
   testcase.assertEqual(expected.scheme, actual.scheme)
   testcase.assertEqual(expected.netloc, actual.netloc)
   testcase.assertEqual(expected.path, actual.path)
@@ -87,9 +88,9 @@ def assertUrisEqual(testcase, expected, actual):
   testcase.assertEqual(expected.fragment, actual.fragment)
   expected_query = parse_qs(expected.query)
   actual_query = parse_qs(actual.query)
-  for name in expected_query.keys():
+  for name in list(expected_query.keys()):
     testcase.assertEqual(expected_query[name], actual_query[name])
-  for name in actual_query.keys():
+  for name in list(actual_query.keys()):
     testcase.assertEqual(expected_query[name], actual_query[name])
 
 
@@ -131,7 +132,7 @@ class Utilities(unittest.TestCase):
       self.assertEqual(STACK_QUERY_PARAMETER_DEFAULT_VALUE,
                        parameters[param_name])
 
-    for param_name, value in root_desc.get('parameters', {}).iteritems():
+    for param_name, value in root_desc.get('parameters', {}).items():
       self.assertEqual(value, parameters[param_name])
 
     return parameters
@@ -140,7 +141,7 @@ class Utilities(unittest.TestCase):
     parameters = self._base_fix_up_parameters_test(self.zoo_get_method_desc,
                                                    'GET', self.zoo_root_desc)
     # Since http_method is 'GET'
-    self.assertFalse(parameters.has_key('body'))
+    self.assertFalse('body' in parameters)
 
   def test_fix_up_parameters_insert(self):
     parameters = self._base_fix_up_parameters_test(self.zoo_insert_method_desc,
@@ -163,15 +164,15 @@ class Utilities(unittest.TestCase):
 
     parameters = _fix_up_parameters(invalid_method_desc, dummy_root_desc,
                                     no_payload_http_method)
-    self.assertFalse(parameters.has_key('body'))
+    self.assertFalse('body' in parameters)
 
     parameters = _fix_up_parameters(valid_method_desc, dummy_root_desc,
                                     no_payload_http_method)
-    self.assertFalse(parameters.has_key('body'))
+    self.assertFalse('body' in parameters)
 
     parameters = _fix_up_parameters(invalid_method_desc, dummy_root_desc,
                                     with_payload_http_method)
-    self.assertFalse(parameters.has_key('body'))
+    self.assertFalse('body' in parameters)
 
     parameters = _fix_up_parameters(valid_method_desc, dummy_root_desc,
                                     with_payload_http_method)
@@ -251,7 +252,7 @@ class Utilities(unittest.TestCase):
     http_method = 'GET'
     method_id = 'bigquery.query'
     accept = []
-    max_size = 0L
+    max_size = 0
     media_path_url = None
     self.assertEqual(result, (path_url, http_method, method_id, accept,
                               max_size, media_path_url))
@@ -263,7 +264,7 @@ class Utilities(unittest.TestCase):
     http_method = 'POST'
     method_id = 'zoo.animals.insert'
     accept = ['image/png']
-    max_size = 1024L
+    max_size = 1024
     media_path_url = 'https://www.googleapis.com/upload/zoo/v1/animals'
     self.assertEqual(result, (path_url, http_method, method_id, accept,
                               max_size, media_path_url))
@@ -280,7 +281,7 @@ class Utilities(unittest.TestCase):
                    'o': 'object',
                    'q': 'string',
                    'rr': 'string'}
-    keys = param_types.keys()
+    keys = list(param_types.keys())
     self.assertEqual(parameters.argmap, dict((key, key) for key in keys))
     self.assertEqual(parameters.required_params, [])
     self.assertEqual(sorted(parameters.repeated_params), ['er', 'rr'])
@@ -298,7 +299,7 @@ class Utilities(unittest.TestCase):
     parameters = ResourceMethodParameters(method_desc)
 
     param_types = {'name': 'string'}
-    keys = param_types.keys()
+    keys = list(param_types.keys())
     self.assertEqual(parameters.argmap, dict((key, key) for key in keys))
     self.assertEqual(parameters.required_params, ['name'])
     self.assertEqual(parameters.repeated_params, [])
@@ -368,7 +369,7 @@ class DiscoveryFromHttp(unittest.TestCase):
       zoo = build('zoo', 'v1', http=http, developerKey='foo',
                   discoveryServiceUrl='http://example.com')
       self.fail('Should have raised an exception.')
-    except HttpError, e:
+    except HttpError as e:
       self.assertEqual(e.uri, 'http://example.com?userIp=10.0.0.1')
 
   def test_userip_missing_is_not_added_to_discovery_uri(self):
@@ -381,7 +382,7 @@ class DiscoveryFromHttp(unittest.TestCase):
       zoo = build('zoo', 'v1', http=http, developerKey=None,
                   discoveryServiceUrl='http://example.com')
       self.fail('Should have raised an exception.')
-    except HttpError, e:
+    except HttpError as e:
       self.assertEqual(e.uri, 'http://example.com')
 
 
@@ -395,32 +396,32 @@ class Discovery(unittest.TestCase):
     try:
       plus.activities().list()
       self.fail()
-    except TypeError, e:
+    except TypeError as e:
       self.assertTrue('Missing' in str(e))
 
     # Missing required parameters even if supplied as None.
     try:
       plus.activities().list(collection=None, userId=None)
       self.fail()
-    except TypeError, e:
+    except TypeError as e:
       self.assertTrue('Missing' in str(e))
 
     # Parameter doesn't match regex
     try:
       plus.activities().list(collection='not_a_collection_name', userId='me')
       self.fail()
-    except TypeError, e:
+    except TypeError as e:
       self.assertTrue('not an allowed value' in str(e))
 
     # Unexpected parameter
     try:
       plus.activities().list(flubber=12)
       self.fail()
-    except TypeError, e:
+    except TypeError as e:
       self.assertTrue('unexpected' in str(e))
 
   def _check_query_types(self, request):
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['q'], ['foo'])
     self.assertEqual(q['i'], ['1'])
@@ -457,7 +458,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=http)
     request = zoo.query(trace='html', fields='description')
 
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['trace'], ['html'])
     self.assertEqual(q['fields'], ['description'])
@@ -467,7 +468,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=http)
     request = zoo.query(trace=None, fields='description')
 
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertFalse('trace' in q)
 
@@ -476,7 +477,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=http)
     request = zoo.animals().get(name='Lion')
 
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['alt'], ['json'])
     self.assertEqual(request.headers['accept'], 'application/json')
@@ -486,7 +487,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=http)
     request = zoo.animals().getmedia(name='Lion')
 
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertTrue('alt' not in q)
     self.assertEqual(request.headers['accept'], '*/*')
@@ -524,7 +525,7 @@ class Discovery(unittest.TestCase):
     self.assertTrue(getattr(zoo, 'animals'))
 
     request = zoo.animals().list(name='bat', projection="full")
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['name'], ['bat'])
     self.assertEqual(q['projection'], ['full'])
@@ -534,7 +535,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=self.http)
     self.assertTrue(getattr(zoo, 'animals'))
     request = zoo.my().favorites().list(max_results="5")
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['max-results'], ['5'])
 
@@ -543,7 +544,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=self.http)
     self.assertTrue(getattr(zoo, 'animals'))
     request = zoo.global_().print_().assert_(max_results="5")
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     self.assertEqual(parsed[2], '/zoo/v1/global/print/assert')
 
   def test_top_level_functions(self):
@@ -551,7 +552,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=self.http)
     self.assertTrue(getattr(zoo, 'query'))
     request = zoo.query(q="foo")
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['q'], ['foo'])
 
@@ -771,7 +772,7 @@ class Discovery(unittest.TestCase):
     try:
       request.execute(http=http)
       self.fail('Should have raised ResumableUploadError.')
-    except ResumableUploadError, e:
+    except ResumableUploadError as e:
       self.assertEqual(400, e.resp.status)
 
   def test_resumable_media_fail_unknown_response_code_subsequent_request(self):
@@ -871,7 +872,7 @@ class Discovery(unittest.TestCase):
 
       try:
         body = request.execute(http=http)
-      except HttpError, e:
+      except HttpError as e:
         self.assertEqual('01234', e.content)
 
     except ImportError:
@@ -985,7 +986,7 @@ class Discovery(unittest.TestCase):
     self.http = HttpMock(datafile('zoo.json'), {'status': '200'})
     zoo = build('zoo', 'v1', http=self.http)
 
-    fd = StringIO.StringIO('data goes here')
+    fd = io.StringIO('data goes here')
 
     # Create an upload that doesn't know the full size of the media.
     upload = MediaIoBaseUpload(
@@ -1009,7 +1010,7 @@ class Discovery(unittest.TestCase):
     zoo = build('zoo', 'v1', http=self.http)
 
     # Create an upload that doesn't know the full size of the media.
-    fd = StringIO.StringIO('data goes here')
+    fd = io.StringIO('data goes here')
 
     upload = MediaIoBaseUpload(
         fd=fd, mimetype='image/png', chunksize=500, resumable=True)
@@ -1026,7 +1027,7 @@ class Discovery(unittest.TestCase):
     try:
       # Should resume the upload by first querying the status of the upload.
       request.next_chunk(http=http)
-    except HttpError, e:
+    except HttpError as e:
       expected = {
           'Content-Range': 'bytes */14',
           'content-length': '0'
@@ -1060,19 +1061,19 @@ class Discovery(unittest.TestCase):
     new_zoo = pickle.loads(pickled_zoo)
     self.assertEqual(sorted(new_zoo.__dict__.keys()), sorted_resource_keys)
     self.assertTrue(hasattr(new_zoo, 'animals'))
-    self.assertTrue(callable(new_zoo.animals))
+    self.assertTrue(isinstance(new_zoo.animals, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'global_'))
-    self.assertTrue(callable(new_zoo.global_))
+    self.assertTrue(isinstance(new_zoo.global_, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'load'))
-    self.assertTrue(callable(new_zoo.load))
+    self.assertTrue(isinstance(new_zoo.load, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'loadNoTemplate'))
-    self.assertTrue(callable(new_zoo.loadNoTemplate))
+    self.assertTrue(isinstance(new_zoo.loadNoTemplate, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'my'))
-    self.assertTrue(callable(new_zoo.my))
+    self.assertTrue(isinstance(new_zoo.my, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'query'))
-    self.assertTrue(callable(new_zoo.query))
+    self.assertTrue(isinstance(new_zoo.query, collections.Callable))
     self.assertTrue(hasattr(new_zoo, 'scopedAnimals'))
-    self.assertTrue(callable(new_zoo.scopedAnimals))
+    self.assertTrue(isinstance(new_zoo.scopedAnimals, collections.Callable))
 
     self.assertEqual(sorted(zoo._dynamic_attrs), sorted(new_zoo._dynamic_attrs))
     self.assertEqual(zoo._baseUrl, new_zoo._baseUrl)
@@ -1143,7 +1144,7 @@ class Next(unittest.TestCase):
     request = tasks.tasklists().list()
     next_request = tasks.tasklists().list_next(
         request, {'nextPageToken': '123abc'})
-    parsed = list(urlparse.urlparse(next_request.uri))
+    parsed = list(urllib.parse.urlparse(next_request.uri))
     q = parse_qs(parsed[4])
     self.assertEqual(q['pageToken'][0], '123abc')
 
@@ -1160,7 +1161,7 @@ class MediaGet(unittest.TestCase):
     zoo = build('zoo', 'v1', http=http)
     request = zoo.animals().get_media(name='Lion')
 
-    parsed = urlparse.urlparse(request.uri)
+    parsed = urllib.parse.urlparse(request.uri)
     q = parse_qs(parsed[4])
     self.assertEqual(q['alt'], ['media'])
     self.assertEqual(request.headers['accept'], '*/*')

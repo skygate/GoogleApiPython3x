@@ -19,7 +19,7 @@ __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import os
 import unittest
-import StringIO
+import io
 
 import httplib2
 
@@ -61,22 +61,22 @@ class OAuth2CredentialsTests(unittest.TestCase):
       try:
         clientsecrets.loads(src)
         self.fail(src + ' should not be a valid client_secrets file.')
-      except clientsecrets.InvalidClientSecretsError, e:
+      except clientsecrets.InvalidClientSecretsError as e:
         self.assertTrue(str(e).startswith(match))
 
       # Test loads(fp)
       try:
-        fp = StringIO.StringIO(src)
+        fp = io.StringIO(src)
         clientsecrets.load(fp)
         self.fail(src + ' should not be a valid client_secrets file.')
-      except clientsecrets.InvalidClientSecretsError, e:
+      except clientsecrets.InvalidClientSecretsError as e:
         self.assertTrue(str(e).startswith(match))
 
   def test_load_by_filename(self):
     try:
       clientsecrets._loadfile(NONEXISTENT_FILE)
       self.fail('should fail to load a missing client_secrets file.')
-    except clientsecrets.InvalidClientSecretsError, e:
+    except clientsecrets.InvalidClientSecretsError as e:
       self.assertTrue(str(e).startswith('File'))
 
 

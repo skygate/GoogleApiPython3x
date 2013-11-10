@@ -161,7 +161,7 @@ class OAuth2ClientFileTests(unittest.TestCase):
     credentials = self.create_test_credentials()
 
     open(FILENAME, 'a+b').close()
-    os.chmod(FILENAME, 0400)
+    os.chmod(FILENAME, 0o400)
 
     store = multistore_file.get_credential_storage(
         FILENAME,
@@ -172,7 +172,7 @@ class OAuth2ClientFileTests(unittest.TestCase):
     store.put(credentials)
     if os.name == 'posix':
       self.assertTrue(store._multistore._read_only)
-    os.chmod(FILENAME, 0600)
+    os.chmod(FILENAME, 0o600)
 
   def test_multistore_no_symbolic_link_files(self):
     if hasattr(os, 'symlink'):

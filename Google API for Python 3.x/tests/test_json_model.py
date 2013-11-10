@@ -34,7 +34,7 @@ from oauth2client.anyjson import simplejson
 
 # Python 2.5 requires different modules
 try:
-  from urlparse import parse_qs
+  from urllib.parse import parse_qs
 except ImportError:
   from cgi import parse_qs
 
@@ -110,7 +110,7 @@ class Model(unittest.TestCase):
 
     headers = {}
     path_params = {}
-    query_params = {'foo': 1, 'bar': u'\N{COMET}',
+    query_params = {'foo': 1, 'bar': '\N{COMET}',
         'baz': ['fe', 'fi', 'fo', 'fum'], # Repeated parameters
         'qux': []}
     body = {}
@@ -123,7 +123,7 @@ class Model(unittest.TestCase):
 
     query_dict = parse_qs(query[1:])
     self.assertEqual(query_dict['foo'], ['1'])
-    self.assertEqual(query_dict['bar'], [u'\N{COMET}'.encode('utf-8')])
+    self.assertEqual(query_dict['bar'], ['\N{COMET}'.encode('utf-8')])
     self.assertEqual(query_dict['baz'], ['fe', 'fi', 'fo', 'fum'])
     self.assertTrue('qux' not in query_dict)
     self.assertEqual(body, '{}')
@@ -152,7 +152,7 @@ class Model(unittest.TestCase):
     try:
       content = model.response(resp, content)
       self.fail('Should have thrown an exception')
-    except HttpError, e:
+    except HttpError as e:
       self.assertTrue('not authorized' in str(e))
 
     resp['content-type'] = 'application/json'
@@ -160,7 +160,7 @@ class Model(unittest.TestCase):
     try:
       content = model.response(resp, content)
       self.fail('Should have thrown an exception')
-    except HttpError, e:
+    except HttpError as e:
       self.assertTrue('not authorized' in str(e))
 
   def test_good_response(self):
@@ -214,7 +214,7 @@ class Model(unittest.TestCase):
       def __init__(self, items):
         super(MockResponse, self).__init__()
         self.status = items['status']
-        for key, value in items.iteritems():
+        for key, value in items.items():
           self[key] = value
     old_logging = apiclient.model.logging
     apiclient.model.logging = MockLogging()

@@ -18,7 +18,7 @@ __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import os
 import unittest
-import StringIO
+import io
 
 from apiclient.schema import Schemas
 from oauth2client.anyjson import simplejson

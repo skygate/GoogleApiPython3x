@@ -28,10 +28,10 @@ import sys
 import tempfile
 import time
 import unittest
-import urlparse
+import urllib.parse
 
 try:
-    from urlparse import parse_qs
+    from urllib.parse import parse_qs
 except ImportError:
     from cgi import parse_qs
 
@@ -99,7 +99,7 @@ class CryptTests(unittest.TestCase):
     private_key = datafile('privatekey.%s' % self.format)
     signer = self.signer.from_string(private_key)
     audience = 'some_audience_address@testing.gserviceaccount.com'
-    now = long(time.time())
+    now = int(time.time())
 
     return crypt.make_signed_jwt(
         signer,

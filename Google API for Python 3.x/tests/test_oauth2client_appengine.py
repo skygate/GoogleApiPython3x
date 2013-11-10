@@ -29,10 +29,10 @@ import mox
 import os
 import time
 import unittest
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 try:
-  from urlparse import parse_qs
+  from urllib.parse import parse_qs
 except ImportError:
   from cgi import parse_qs
 
@@ -535,7 +535,7 @@ class DecoratorTests(unittest.TestCase):
     if self.decorator._token_response_param:
       response = parse_qs(parts[1])[self.decorator._token_response_param][0]
       self.assertEqual(Http2Mock.content,
-                       simplejson.loads(urllib.unquote(response)))
+                       simplejson.loads(urllib.parse.unquote(response)))
     self.assertEqual(self.decorator.flow, self.decorator._tls.flow)
     self.assertEqual(self.decorator.credentials,
                      self.decorator._tls.credentials)

@@ -27,7 +27,7 @@ import datetime
 import httplib2
 import os
 import unittest
-import urlparse
+import urllib.parse
 
 from apiclient.http import HttpMock
 from apiclient.http import HttpMockSequence
@@ -55,7 +55,7 @@ from oauth2client.client import credentials_from_clientsecrets_and_code
 from oauth2client.client import credentials_from_code
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.clientsecrets import _loadfile
-from test_discovery import assertUrisEqual
+from .test_discovery import assertUrisEqual
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -198,29 +198,29 @@ class BasicCredentialsTests(unittest.TestCase):
     self.assertEqual(instance.__dict__, self.credentials.__dict__)
 
   def test_no_unicode_in_request_params(self):
-    access_token = u'foo'
-    client_id = u'some_client_id'
-    client_secret = u'cOuDdkfjxxnv+'
-    refresh_token = u'1/0/a.df219fjls0'
-    token_expiry = unicode(datetime.datetime.utcnow())
-    token_uri = unicode(GOOGLE_TOKEN_URI)
-    revoke_uri = unicode(GOOGLE_REVOKE_URI)
-    user_agent = u'refresh_checker/1.0'
+    access_token = 'foo'
+    client_id = 'some_client_id'
+    client_secret = 'cOuDdkfjxxnv+'
+    refresh_token = '1/0/a.df219fjls0'
+    token_expiry = str(datetime.datetime.utcnow())
+    token_uri = str(GOOGLE_TOKEN_URI)
+    revoke_uri = str(GOOGLE_REVOKE_URI)
+    user_agent = 'refresh_checker/1.0'
     credentials = OAuth2Credentials(access_token, client_id, client_secret,
                                     refresh_token, token_expiry, token_uri,
                                     user_agent, revoke_uri=revoke_uri)
 
     http = HttpMock(headers={'status': '200'})
     http = credentials.authorize(http)
-    http.request(u'http://example.com', method=u'GET', headers={u'foo': u'bar'})
-    for k, v in http.headers.iteritems():
+    http.request('http://example.com', method='GET', headers={'foo': 'bar'})
+    for k, v in http.headers.items():
       self.assertEqual(str, type(k))
       self.assertEqual(str, type(v))
 
     # Test again with unicode strings that can't simple be converted to ASCII.
     try:
       http.request(
-          u'http://example.com', method=u'GET', headers={u'foo': u'\N{COMET}'})
+          'http://example.com', method='GET', headers={'foo': '\N{COMET}'})
       self.fail('Expected exception to be raised.')
     except NonAsciiHeaderError:
       pass
@@ -294,7 +294,7 @@ class TestAssertionCredentials(unittest.TestCase):
         user_agent=user_agent)
 
   def test_assertion_body(self):
-    body = urlparse.parse_qs(self.credentials._generate_refresh_request_body())
+    body = urllib.parse.parse_qs(self.credentials._generate_refresh_request_body())
     self.assertEqual(self.assertion_text, body['assertion'][0])
     self.assertEqual('urn:ietf:params:oauth:grant-type:jwt-bearer',
                      body['grant_type'][0])
@@ -366,8 +366,8 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
   def test_construct_authorize_url(self):
     authorize_url = self.flow.step1_get_authorize_url()
 
-    parsed = urlparse.urlparse(authorize_url)
-    q = urlparse.parse_qs(parsed[4])
+    parsed = urllib.parse.urlparse(authorize_url)
+    q = urllib.parse.parse_qs(parsed[4])
     self.assertEqual('client_id+1', q['client_id'][0])
     self.assertEqual('code', q['response_type'][0])
     self.assertEqual('foo', q['scope'][0])
@@ -387,8 +387,8 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
         )
     authorize_url = flow.step1_get_authorize_url()
 
-    parsed = urlparse.urlparse(authorize_url)
-    q = urlparse.parse_qs(parsed[4])
+    parsed = urllib.parse.urlparse(authorize_url)
+    q = urllib.parse.parse_qs(parsed[4])
     self.assertEqual('client_id+1', q['client_id'][0])
     self.assertEqual('token', q['response_type'][0])
     self.assertEqual('foo', q['scope'][0])
@@ -414,7 +414,7 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
     try:
       credentials = self.flow.step2_exchange('some random code', http=http)
       self.fail('should raise exception if exchange doesn\'t get 200')
-    except FlowExchangeError, e:
+    except FlowExchangeError as e:
       self.assertEquals('invalid_request', str(e))
 
   def test_exchange_failure_with_json_error(self):
@@ -432,7 +432,7 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
     try:
       credentials = self.flow.step2_exchange('some random code', http=http)
       self.fail('should raise exception if exchange doesn\'t get 200')
-    except FlowExchangeError, e:
+    except FlowExchangeError as e:
       pass
 
   def test_exchange_success(self):
@@ -497,7 +497,7 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
     try:
       credentials = self.flow.step2_exchange(code, http=http)
       self.fail('should raise exception if no code in dictionary.')
-    except FlowExchangeError, e:
+    except FlowExchangeError as e:
       self.assertTrue('shall not pass' in str(e))
 
   def test_exchange_id_token_fail(self):

@@ -26,9 +26,9 @@ import httplib2
 import logging
 import os
 import unittest
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import random
-import StringIO
+import io
 import time
 
 from apiclient.discovery import build
@@ -231,7 +231,7 @@ class TestMediaIoBaseUpload(unittest.TestCase):
 
   def test_media_io_base_upload_from_string_io(self):
     f = open(datafile('small.png'), 'r')
-    fd = StringIO.StringIO(f.read())
+    fd = io.StringIO(f.read())
     f.close()
 
     upload = MediaIoBaseUpload(
@@ -307,8 +307,8 @@ class TestMediaIoBaseUpload(unittest.TestCase):
     ])
 
     model = JsonModel()
-    uri = u'https://www.googleapis.com/someapi/v1/upload/?foo=bar'
-    method = u'POST'
+    uri = 'https://www.googleapis.com/someapi/v1/upload/?foo=bar'
+    method = 'POST'
     request = HttpRequest(
         http,
         model.response,
@@ -331,7 +331,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
     http = HttpMock(datafile('zoo.json'), {'status': '200'})
     zoo = build('zoo', 'v1', http=http)
     self.request = zoo.animals().get_media(name='Lion')
-    self.fd = StringIO.StringIO()
+    self.fd = io.StringIO()
 
   def test_media_io_base_download(self):
     self.request.http = HttpMockSequence([
@@ -585,14 +585,14 @@ class TestHttpRequest(unittest.TestCase):
   def test_unicode(self):
     http = HttpMock(datafile('zoo.json'), headers={'status': '200'})
     model = JsonModel()
-    uri = u'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
-    method = u'POST'
+    uri = 'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
+    method = 'POST'
     request = HttpRequest(
         http,
         model.response,
         uri,
         method=method,
-        body=u'{}',
+        body='{}',
         headers={'content-type': 'application/json'})
     request.execute()
     self.assertEqual(uri, http.uri)
@@ -607,14 +607,14 @@ class TestHttpRequest(unittest.TestCase):
 
     http = HttpMockSequence(resp_seq)
     model = JsonModel()
-    uri = u'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
-    method = u'POST'
+    uri = 'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
+    method = 'POST'
     request = HttpRequest(
         http,
         model.response,
         uri,
         method=method,
-        body=u'{}',
+        body='{}',
         headers={'content-type': 'application/json'})
 
     sleeptimes = []
@@ -624,7 +624,7 @@ class TestHttpRequest(unittest.TestCase):
     request.execute(num_retries=num_retries)
 
     self.assertEqual(num_retries, len(sleeptimes))
-    for retry_num in xrange(num_retries):
+    for retry_num in range(num_retries):
       self.assertEqual(10 * 2**(retry_num + 1), sleeptimes[retry_num])
 
   def test_no_retry_fails_fast(self):
@@ -633,14 +633,14 @@ class TestHttpRequest(unittest.TestCase):
         ({'status': '200'}, '{}')
         ])
     model = JsonModel()
-    uri = u'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
-    method = u'POST'
+    uri = 'https://www.googleapis.com/someapi/v1/collection/?foo=bar'
+    method = 'POST'
     request = HttpRequest(
         http,
         model.response,
         uri,
         method=method,
-        body=u'{}',
+        body='{}',
         headers={'content-type': 'application/json'})
 
     request._rand = lambda: 1.0
@@ -796,7 +796,7 @@ class TestBatch(unittest.TestCase):
     try:
       batch.execute(http=http)
       self.fail('Should raise exception')
-    except BatchError, e:
+    except BatchError as e:
       boundary, _ = e.content.split(None, 1)
       self.assertEqual('--', boundary[:2])
       parts = e.content.split(boundary)
@@ -880,7 +880,7 @@ class TestBatch(unittest.TestCase):
     self.assertEqual(401, callbacks.exceptions['1'].resp.status)
     self.assertEqual(
         'Authorization Required', callbacks.exceptions['1'].resp.reason)
-    self.assertEqual({u'baz': u'qux'}, callbacks.responses['2'])
+    self.assertEqual({'baz': 'qux'}, callbacks.responses['2'])
     self.assertEqual(None, callbacks.exceptions['2'])
 
   def test_execute_global_callback(self):
@@ -938,7 +938,7 @@ class TestRequestUriTooLong(unittest.TestCase):
     req = HttpRequest(
         http,
         _postproc,
-        'http://example.com?' + urllib.urlencode(query),
+        'http://example.com?' + urllib.parse.urlencode(query),
         method='GET',
         body=None,
         headers={},
@@ -961,7 +961,7 @@ class TestStreamSlice(unittest.TestCase):
   """Test _StreamSlice."""
 
   def setUp(self):
-    self.stream = StringIO.StringIO('0123456789')
+    self.stream = io.StringIO('0123456789')
 
   def test_read(self):
     s =  _StreamSlice(self.stream, 0, 4)
