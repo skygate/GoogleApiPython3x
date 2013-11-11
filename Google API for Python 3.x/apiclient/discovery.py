@@ -189,8 +189,9 @@ def build(serviceName,
                                          os.environ['REMOTE_ADDR'])
   logger.info('URL being requested: %s' % requested_url)
 
-  resp, content_bytes = http.request(requested_url)
-  content = content_bytes.decode(encoding='UTF-8')
+  resp, content = http.request(requested_url)
+  if type(content) is bytes:
+    content = content.decode(encoding='UTF-8')
 
   if resp.status == 404:
     raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
