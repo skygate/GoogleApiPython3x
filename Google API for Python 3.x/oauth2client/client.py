@@ -213,7 +213,7 @@ class Credentials(object):
       An instance of the subclass of Credentials that was serialized with
       to_json().
     """
-    data = simplejson.loads(s)
+    data = simplejson.loads(s.decode())
     # Find and call the right classmethod from_json() to restore the object.
     module = data['_module']
     try:
@@ -546,7 +546,7 @@ class OAuth2Credentials(Credentials):
     Returns:
       An instance of a Credentials subclass.
     """
-    data = simplejson.loads(s)
+    data = simplejson.loads(s.decode())
     if 'token_expiry' in data and not isinstance(data['token_expiry'],
         datetime.datetime):
       try:
