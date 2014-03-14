@@ -213,7 +213,7 @@ class Credentials(object):
       An instance of the subclass of Credentials that was serialized with
       to_json().
     """
-    data = simplejson.loads(s)
+    data = simplejson.loads(s.decode())
     # Find and call the right classmethod from_json() to restore the object.
     module = data['_module']
     try:
@@ -546,7 +546,7 @@ class OAuth2Credentials(Credentials):
     Returns:
       An instance of a Credentials subclass.
     """
-    data = simplejson.loads(s)
+    data = simplejson.loads(s.decode())
     if 'token_expiry' in data and not isinstance(data['token_expiry'],
         datetime.datetime):
       try:
@@ -682,7 +682,7 @@ class OAuth2Credentials(Credentials):
         self.token_uri, method='POST', body=body, headers=headers)
     if resp.status == 200:
       # TODO(jcgregorio) Raise an error if loads fails?
-      d = simplejson.loads(content)
+      d = simplejson.loads(content.decode())
       self.token_response = d
       self.access_token = d['access_token']
       self.refresh_token = d.get('refresh_token', self.refresh_token)
@@ -699,7 +699,7 @@ class OAuth2Credentials(Credentials):
       logger.info('Failed to retrieve access token: %s' % content)
       error_msg = 'Invalid response %s.' % resp['status']
       try:
-        d = simplejson.loads(content)
+        d = simplejson.loads(content.decode())
         if 'error' in d:
           error_msg = d['error']
           self.invalid = True
@@ -739,7 +739,7 @@ class OAuth2Credentials(Credentials):
     else:
       error_msg = 'Invalid response %s.' % resp.status
       try:
-        d = simplejson.loads(content)
+        d = simplejson.loads(content.decode())
         if 'error' in d:
           error_msg = d['error']
       except Exception:
@@ -1008,7 +1008,7 @@ if HAS_CRYPTO:
     resp, content = http.request(cert_uri)
 
     if resp.status == 200:
-      certs = simplejson.loads(content)
+      certs = simplejson.loads(content.decode())
       return crypt.verify_signed_jwt_with_certs(id_token, certs, audience)
     else:
       raise VerifyJwtTokenError('Status code: %d' % resp.status)
@@ -1056,7 +1056,7 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = simplejson.loads(content)
+    resp = simplejson.loads(content.decode())
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
