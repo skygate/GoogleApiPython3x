@@ -337,7 +337,7 @@ class ExtractIdTokenTest(unittest.TestCase):
 
   def test_extract_success(self):
     body = {'foo': 'bar'}
-    payload = base64.urlsafe_b64encode(simplejson.dumps(body)).strip('=')
+    payload = base64.urlsafe_b64encode(simplejson.dumps(body).encode()).decode().strip('=')
     jwt = 'stuff.' + payload + '.signature'
 
     extracted = _extract_id_token(jwt)
@@ -345,7 +345,7 @@ class ExtractIdTokenTest(unittest.TestCase):
 
   def test_extract_failure(self):
     body = {'foo': 'bar'}
-    payload = base64.urlsafe_b64encode(simplejson.dumps(body)).strip('=')
+    payload = base64.urlsafe_b64encode(simplejson.dumps(body).encode()).decode('ascii').strip('=')
     jwt = 'stuff.' + payload
 
     self.assertRaises(VerifyJwtTokenError, _extract_id_token, jwt)
