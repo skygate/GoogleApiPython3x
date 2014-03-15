@@ -546,7 +546,7 @@ class OAuth2Credentials(Credentials):
     Returns:
       An instance of a Credentials subclass.
     """
-    data = simplejson.loads(s.decode())
+    data = simplejson.loads(s)
     if 'token_expiry' in data and not isinstance(data['token_expiry'],
         datetime.datetime):
       try:
