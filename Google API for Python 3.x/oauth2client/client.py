@@ -1016,9 +1016,9 @@ if HAS_CRYPTO:
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode('ascii')
+  b64string = b64string.encode().decode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded)
+  return base64.urlsafe_b64decode(padded).decode('ascii')
 
 
 def _extract_id_token(id_token):
@@ -1056,7 +1056,7 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = simplejson.loads(content.decode())
+    resp = simplejson.loads(content)
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
