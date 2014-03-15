@@ -213,7 +213,7 @@ class Credentials(object):
       An instance of the subclass of Credentials that was serialized with
       to_json().
     """
-    data = simplejson.loads(s.decode())
+    data = simplejson.loads(s)
     # Find and call the right classmethod from_json() to restore the object.
     module = data['_module']
     try:
