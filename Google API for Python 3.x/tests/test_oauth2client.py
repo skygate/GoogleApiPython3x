@@ -55,7 +55,7 @@ from oauth2client.client import credentials_from_clientsecrets_and_code
 from oauth2client.client import credentials_from_code
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.clientsecrets import _loadfile
-from .test_discovery import assertUrisEqual
+from test_discovery import assertUrisEqual
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -512,9 +512,10 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
 
   def test_exchange_id_token_fail(self):
     body = {'foo': 'bar'}
-    payload = base64.urlsafe_b64encode(simplejson.dumps(body)).strip('=')
-    jwt = (base64.urlsafe_b64encode('stuff')+ '.' + payload + '.' +
-           base64.urlsafe_b64encode('signature'))
+    json = simplejson.dumps(body).encode()
+    payload = base64.urlsafe_b64encode(json).decode('ascii').strip('=')
+    jwt = (base64.urlsafe_b64encode(b'stuff').decode('ascii') + '.' + payload + '.' +
+           base64.urlsafe_b64encode(b'signature').decode('ascii'))
 
     http = HttpMockSequence([
       ({'status': '200'}, """{ "access_token":"SlAV32hkKG",
