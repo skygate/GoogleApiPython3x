@@ -1056,7 +1056,7 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = simplejson.loads(content)
+    resp = simplejson.loads(content.decode())
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here

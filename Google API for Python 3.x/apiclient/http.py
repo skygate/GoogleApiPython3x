@@ -1453,7 +1453,7 @@ class HttpMock(object):
       self.data = f.read()
       f.close()
     else:
-      self.data = None
+      self.data = b''
     self.response_headers = headers
     self.headers = None
     self.uri = None
