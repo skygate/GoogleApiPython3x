@@ -1057,11 +1057,11 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = simplejson.loads(content.decode())
+    resp = simplejson.loads(content)
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
-    resp = dict(parse_qsl(content.decode()))
+    resp = dict(parse_qsl(content))
 
   # some providers respond with 'expires', others with 'expires_in'
   if resp and 'expires' in resp:
@@ -1282,6 +1282,7 @@ class OAuth2WebServerFlow(Flow):
 
     resp, content = http.request(self.token_uri, method='POST', body=body,
                                  headers=headers)
+    content = content.decode()
     d = _parse_exchange_token_response(content)
     if resp.status == 200 and 'access_token' in d:
       access_token = d['access_token']
