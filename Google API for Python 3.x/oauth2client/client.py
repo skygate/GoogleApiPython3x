@@ -213,7 +213,7 @@ class Credentials(object):
       An instance of the subclass of Credentials that was serialized with
       to_json().
     """
-    data = simplejson.loads(s.decode())
+    data = simplejson.loads(s)
     # Find and call the right classmethod from_json() to restore the object.
     module = data['_module']
     try:
@@ -546,7 +546,7 @@ class OAuth2Credentials(Credentials):
     Returns:
       An instance of a Credentials subclass.
     """
-    data = simplejson.loads(s.decode())
+    data = simplejson.loads(s)
     if 'token_expiry' in data and not isinstance(data['token_expiry'],
         datetime.datetime):
       try:
@@ -680,9 +680,10 @@ class OAuth2Credentials(Credentials):
     logger.info('Refreshing access_token')
     resp, content = http_request(
         self.token_uri, method='POST', body=body, headers=headers)
+    content = content.decode()
     if resp.status == 200:
       # TODO(jcgregorio) Raise an error if loads fails?
-      d = simplejson.loads(content.decode())
+      d = simplejson.loads(content)
       self.token_response = d
       self.access_token = d['access_token']
       self.refresh_token = d.get('refresh_token', self.refresh_token)
@@ -699,7 +700,7 @@ class OAuth2Credentials(Credentials):
       logger.info('Failed to retrieve access token: %s' % content)
       error_msg = 'Invalid response %s.' % resp['status']
       try:
-        d = simplejson.loads(content.decode())
+        d = simplejson.loads(content)
         if 'error' in d:
           error_msg = d['error']
           self.invalid = True
@@ -1016,9 +1017,9 @@ if HAS_CRYPTO:
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode('ascii')
+  b64string = b64string.encode().decode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded)
+  return base64.urlsafe_b64decode(padded).decode()
 
 
 def _extract_id_token(id_token):
@@ -1056,7 +1057,7 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = simplejson.loads(content.decode())
+    resp = simplejson.loads(content)
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
@@ -1281,6 +1282,7 @@ class OAuth2WebServerFlow(Flow):
 
     resp, content = http.request(self.token_uri, method='POST', body=body,
                                  headers=headers)
+    content = content.decode()
     d = _parse_exchange_token_response(content)
     if resp.status == 200 and 'access_token' in d:
       access_token = d['access_token']
