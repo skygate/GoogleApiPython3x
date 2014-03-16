@@ -1,12 +1,9 @@
 GoogleApiPython3x
 =================
 
-This is an unofficial port to Python 3.x of the python client library for Google's discovery based APIs.
-It is a work-in-progress, feel free to contribute.
+This is an unofficial port to Python 3.x of the python client library for Google's discovery based APIs. It is a work-in-progress, feel free to contribute.
 
-The current (3.1) version now features working basic OAuth functionality and Google API functionality, 
-as verified by passing the associated pyunit tests that came with the original Python 2.x code. Some 
-is still untested, so use at your own risk.
+The current (3.1) version now features working basic OAuth functionality and Google API functionality, as verified by passing the associated pyunit tests that came with the original Python 2.x code. Some is still untested, so use at your own risk.
 
 
 Installation
