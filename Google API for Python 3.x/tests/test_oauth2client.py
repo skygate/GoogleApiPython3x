@@ -306,7 +306,7 @@ class TestAssertionCredentials(unittest.TestCase):
       ])
     http = self.credentials.authorize(http)
     resp, content = http.request('http://example.com')
-    self.assertEqual('Bearer 1/3w', content['Authorization'])
+    self.assertEqual('Bearer 1/3w', dict(content)['Authorization'])
 
   def test_token_revoke_success(self):
     _token_revoke_test_helper(

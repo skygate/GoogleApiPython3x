@@ -1060,7 +1060,7 @@ def _parse_exchange_token_response(content):
   except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
-    resp = dict(parse_qsl(content))
+    resp = dict(parse_qsl(content.decode()))
 
   # some providers respond with 'expires', others with 'expires_in'
   if resp and 'expires' in resp:
