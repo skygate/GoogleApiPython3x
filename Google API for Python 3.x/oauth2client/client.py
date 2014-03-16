@@ -1019,7 +1019,7 @@ def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
   b64string = b64string.encode().decode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded).decode('ascii')
+  return base64.urlsafe_b64decode(padded).decode()
 
 
 def _extract_id_token(id_token):
