@@ -150,7 +150,7 @@ class BasicCredentialsTests(unittest.TestCase):
       ])
       http = self.credentials.authorize(http)
       resp, content = http.request('http://example.com')
-      self.assertEqual('Bearer 1/3w', content['Authorization'])
+      self.assertEqual('Bearer 1/3w', simplejson.loads(content.decode())['Authorization'])
       self.assertFalse(self.credentials.access_token_expired)
       self.assertEqual(token_response, self.credentials.token_response)
 
@@ -276,7 +276,7 @@ class AccessTokenCredentialsTests(unittest.TestCase):
       ])
     http = self.credentials.authorize(http)
     resp, content = http.request('http://example.com')
-    self.assertEqual('Bearer foo', content['Authorization'])
+    self.assertEqual('Bearer foo', simplejson.loads(content.decode())['Authorization'])
 
 
 class TestAssertionCredentials(unittest.TestCase):
@@ -306,7 +306,7 @@ class TestAssertionCredentials(unittest.TestCase):
       ])
     http = self.credentials.authorize(http)
     resp, content = http.request('http://example.com')
-    self.assertEqual('Bearer 1/3w', dict(content)['Authorization'])
+    self.assertEqual('Bearer 1/3w', simplejson.loads(content.decode())['Authorization'])
 
   def test_token_revoke_success(self):
     _token_revoke_test_helper(

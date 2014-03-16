@@ -1468,6 +1468,7 @@ class HttpMock(object):
               headers=None,
               redirections=1,
               connection_type=None):
+
     self.uri = uri
     self.method = method
     self.body = body
@@ -1515,7 +1516,7 @@ class HttpMockSequence(object):
               connection_type=None):
     resp, content = self._iterable.pop(0)
     if content == 'echo_request_headers':
-      content = bytes(headers)
+      content = simplejson.dumps(headers).encode()
     elif content == 'echo_request_headers_as_json':
       content = simplejson.dumps(headers).encode()
     elif content == 'echo_request_body':
