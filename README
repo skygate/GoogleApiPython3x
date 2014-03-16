@@ -1,0 +1,40 @@
+GoogleApiPython3x
+=================
+
+This is an unofficial port to Python 3.x of the python client library for Google's discovery based APIs.
+It is a work-in-progress, feel free to contribute.
+
+
+Version 3.0: Initial translation of 2.7 code to 3.x grammar using the 2to3 tool and some
+  minor postmodifications. Google API now works for basic functionality. OAuth has not,
+  however, been tested yet. Still pending: validating the complete test suite from the
+  official Google 2.7 codebase
+
+
+Installation
+============
+
+To install, simply use pip:
+
+   $ pip install git+https://github.com/enorvelle/GoogleApiPython3x.git
+
+See the Developers Guide for more detailed instructions and documentation:
+
+  https://developers.google.com/api-client-library/python/start/get_started
+
+
+Third Party Libraries
+=====================
+
+These libraries will be installed when you install the client library:
+
+http://code.google.com/p/httplib2
+http://code.google.com/p/uri-templates
+
+Depending on your version of Python, these libraries may also be installed:
+
+http://pypi.python.org/pypi/simplejson/
+
+For development you will also need:
+
+http://pythonpaste.org/webtest/
