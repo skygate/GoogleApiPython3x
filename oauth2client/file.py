@@ -72,10 +72,8 @@ class Storage(BaseStorage):
     self._validate_file()
     try:
       f = open(self._filename, 'rb')
-      content = f.read()
+      content = f.read().decode()
       f.close()
-      if content:
-          content.decode()
     except IOError:
       return credentials
 

@@ -1453,7 +1453,7 @@ class HttpMock(object):
       self.data = f.read()
       f.close()
     else:
-      self.data = None
+      self.data = b''
     self.response_headers = headers
     self.headers = None
     self.uri = None
@@ -1468,6 +1468,7 @@ class HttpMock(object):
               headers=None,
               redirections=1,
               connection_type=None):
+
     self.uri = uri
     self.method = method
     self.body = body
@@ -1515,16 +1516,21 @@ class HttpMockSequence(object):
               connection_type=None):
     resp, content = self._iterable.pop(0)
     if content == 'echo_request_headers':
-      content = headers
+      content = simplejson.dumps(headers).encode()
     elif content == 'echo_request_headers_as_json':
-      content = simplejson.dumps(headers)
+      content = simplejson.dumps(headers).encode()
     elif content == 'echo_request_body':
       if hasattr(body, 'read'):
-        content = body.read()
+        content = bytes(body.read())
       else:
-        content = body
+        content = bytes(body)
     elif content == 'echo_request_uri':
-      content = uri
+      content = uri.encode()
+    elif type(content) == str:
+      content = content.encode()
+    else:
+      content = bytes(content)
+
     return httplib2.Response(resp), content
 
 

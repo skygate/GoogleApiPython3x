@@ -262,9 +262,9 @@ def _urlsafe_b64encode(raw_bytes):
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode('ascii')
+  b64string = b64string.encode().decode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded)
+  return base64.urlsafe_b64decode(padded).decode()
 
 
 def _json_encode(data):
