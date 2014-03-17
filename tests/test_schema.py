@@ -48,7 +48,7 @@ LOAD_FEED = """{
 
 class SchemasTest(unittest.TestCase):
   def setUp(self):
-    f = file(datafile('zoo.json'))
+    f = open(datafile('zoo.json'))
     discovery = f.read()
     f.close()
     discovery = simplejson.loads(discovery)

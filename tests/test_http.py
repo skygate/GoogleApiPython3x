@@ -49,6 +49,7 @@ from apiclient.http import _StreamSlice
 from apiclient.http import set_user_agent
 from apiclient.model import JsonModel
 from oauth2client.client import Credentials
+from oauth2client.anyjson import simplejson
 
 
 class MockCredentials(Credentials):
@@ -111,6 +112,7 @@ class TestUserAgent(unittest.TestCase):
 
     http = set_user_agent(http, "my_app/5.5")
     resp, content = http.request("http://example.com")
+    content = simplejson.loads(content.decode())
     self.assertEqual('my_app/5.5', content['user-agent'])
 
   def test_set_user_agent_nested(self):
@@ -121,6 +123,7 @@ class TestUserAgent(unittest.TestCase):
     http = set_user_agent(http, "my_app/5.5")
     http = set_user_agent(http, "my_library/0.1")
     resp, content = http.request("http://example.com")
+    content = simplejson.loads(content.decode())
     self.assertEqual('my_app/5.5 my_library/0.1', content['user-agent'])
 
 
@@ -133,7 +136,7 @@ class TestMediaUpload(unittest.TestCase):
     self.assertEqual(190, upload.size())
     self.assertEqual(True, upload.resumable())
     self.assertEqual(500, upload.chunksize())
-    self.assertEqual('PNG', upload.getbytes(1, 3))
+    self.assertEqual(b'PNG', upload.getbytes(1, 3))
 
     json = upload.to_json()
     new_upload = MediaUpload.new_from_json(json)
@@ -142,7 +145,7 @@ class TestMediaUpload(unittest.TestCase):
     self.assertEqual(190, new_upload.size())
     self.assertEqual(True, new_upload.resumable())
     self.assertEqual(500, new_upload.chunksize())
-    self.assertEqual('PNG', new_upload.getbytes(1, 3))
+    self.assertEqual(b'PNG', new_upload.getbytes(1, 3))
 
   def test_media_file_upload_raises_on_invalid_chunksize(self):
     self.assertRaises(InvalidChunkSizeError, MediaFileUpload,
@@ -204,19 +207,19 @@ class TestMediaIoBaseUpload(unittest.TestCase):
       self.assertEqual(190, upload.size())
       self.assertEqual(True, upload.resumable())
       self.assertEqual(500, upload.chunksize())
-      self.assertEqual('PNG', upload.getbytes(1, 3))
+      self.assertEqual(b'PNG', upload.getbytes(1, 3))
     except ImportError:
       pass
 
   def test_media_io_base_upload_from_file_object(self):
-    f = open(datafile('small.png'), 'r')
+    f = open(datafile('small.png'), 'rb')
     upload = MediaIoBaseUpload(
         fd=f, mimetype='image/png', chunksize=500, resumable=True)
     self.assertEqual('image/png', upload.mimetype())
     self.assertEqual(190, upload.size())
     self.assertEqual(True, upload.resumable())
     self.assertEqual(500, upload.chunksize())
-    self.assertEqual('PNG', upload.getbytes(1, 3))
+    self.assertEqual(b'PNG', upload.getbytes(1, 3))
     f.close()
 
   def test_media_io_base_upload_serializable(self):
@@ -230,8 +233,8 @@ class TestMediaIoBaseUpload(unittest.TestCase):
       pass
 
   def test_media_io_base_upload_from_string_io(self):
-    f = open(datafile('small.png'), 'r')
-    fd = io.StringIO(f.read())
+    f = open(datafile('small.png'), 'rb')
+    fd = io.BytesIO(f.read())
     f.close()
 
     upload = MediaIoBaseUpload(
@@ -240,14 +243,14 @@ class TestMediaIoBaseUpload(unittest.TestCase):
     self.assertEqual(190, upload.size())
     self.assertEqual(True, upload.resumable())
     self.assertEqual(500, upload.chunksize())
-    self.assertEqual('PNG', upload.getbytes(1, 3))
+    self.assertEqual(b'PNG', upload.getbytes(1, 3))
     f.close()
 
   def test_media_io_base_upload_from_bytes(self):
     try:
       import io
 
-      f = open(datafile('small.png'), 'r')
+      f = open(datafile('small.png'), 'rb')
       fd = io.BytesIO(f.read())
       upload = MediaIoBaseUpload(
           fd=fd, mimetype='image/png', chunksize=500, resumable=True)
@@ -255,7 +258,7 @@ class TestMediaIoBaseUpload(unittest.TestCase):
       self.assertEqual(190, upload.size())
       self.assertEqual(True, upload.resumable())
       self.assertEqual(500, upload.chunksize())
-      self.assertEqual('PNG', upload.getbytes(1, 3))
+      self.assertEqual(b'PNG', upload.getbytes(1, 3))
     except ImportError:
       pass
 
@@ -263,7 +266,7 @@ class TestMediaIoBaseUpload(unittest.TestCase):
     try:
       import io
 
-      f = open(datafile('small.png'), 'r')
+      f = open(datafile('small.png'), 'rb')
       fd = io.BytesIO(f.read())
       self.assertRaises(InvalidChunkSizeError, MediaIoBaseUpload,
           fd, 'image/png', chunksize=-2, resumable=True)
@@ -274,7 +277,7 @@ class TestMediaIoBaseUpload(unittest.TestCase):
     try:
       import io
 
-      fd = io.BytesIO('stuff')
+      fd = io.BytesIO(b'stuff')
       upload = MediaIoBaseUpload(
           fd=fd, mimetype='image/png', chunksize=500, resumable=True)
       self.assertEqual(True, upload.has_stream())
@@ -288,7 +291,7 @@ class TestMediaIoBaseUpload(unittest.TestCase):
     except ImportError:
       return
 
-    f = open(datafile('small.png'), 'r')
+    f = open(datafile('small.png'), 'rb')
     fd = io.BytesIO(f.read())
     upload = MediaIoBaseUpload(
         fd=fd, mimetype='image/png', chunksize=500, resumable=True)
@@ -331,7 +334,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
     http = HttpMock(datafile('zoo.json'), {'status': '200'})
     zoo = build('zoo', 'v1', http=http)
     self.request = zoo.animals().get_media(name='Lion')
-    self.fd = io.StringIO()
+    self.fd = io.BytesIO()
 
   def test_media_io_base_download(self):
     self.request.http = HttpMockSequence([
@@ -354,7 +357,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
 
     status, done = download.next_chunk()
 
-    self.assertEqual(self.fd.getvalue(), '123')
+    self.assertEqual(self.fd.getvalue(), b'123')
     self.assertEqual(False, done)
     self.assertEqual(3, download._progress)
     self.assertEqual(5, download._total_size)
@@ -362,7 +365,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
 
     status, done = download.next_chunk()
 
-    self.assertEqual(self.fd.getvalue(), '12345')
+    self.assertEqual(self.fd.getvalue(), b'12345')
     self.assertEqual(True, done)
     self.assertEqual(5, download._progress)
     self.assertEqual(5, download._total_size)
@@ -404,7 +407,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
 
     status, done = download.next_chunk()
 
-    self.assertEqual(self.fd.getvalue(), '123')
+    self.assertEqual(self.fd.getvalue(), b'123')
 
   def test_media_io_base_download_retries_5xx(self):
     self.request.http = HttpMockSequence([
@@ -440,7 +443,7 @@ class TestMediaIoBaseDownload(unittest.TestCase):
     # Check for exponential backoff using the rand function above.
     self.assertEqual([20, 40, 80], sleeptimes)
 
-    self.assertEqual(self.fd.getvalue(), '123')
+    self.assertEqual(self.fd.getvalue(), b'123')
     self.assertEqual(False, done)
     self.assertEqual(3, download._progress)
     self.assertEqual(5, download._total_size)
@@ -454,19 +457,19 @@ class TestMediaIoBaseDownload(unittest.TestCase):
     # Check for exponential backoff using the rand function above.
     self.assertEqual([20, 40, 80], sleeptimes)
 
-    self.assertEqual(self.fd.getvalue(), '12345')
+    self.assertEqual(self.fd.getvalue(), b'12345')
     self.assertEqual(True, done)
     self.assertEqual(5, download._progress)
     self.assertEqual(5, download._total_size)
 
-EXPECTED = """POST /someapi/v1/collection/?foo=bar HTTP/1.1
+EXPECTED = b"""POST /someapi/v1/collection/?foo=bar HTTP/1.1
 Content-Type: application/json
 MIME-Version: 1.0
 Host: www.googleapis.com
 content-length: 2\r\n\r\n{}"""
 
 
-NO_BODY_EXPECTED = """POST /someapi/v1/collection/?foo=bar HTTP/1.1
+NO_BODY_EXPECTED = b"""POST /someapi/v1/collection/?foo=bar HTTP/1.1
 Content-Type: application/json
 MIME-Version: 1.0
 Host: www.googleapis.com
@@ -700,7 +703,7 @@ class TestBatch(unittest.TestCase):
 
   def test_serialize_request_media_body(self):
     batch = BatchHttpRequest()
-    f = open(datafile('small.png'))
+    f = open(datafile('small.png'),'rb')
     body = f.read()
     f.close()
 
@@ -802,7 +805,7 @@ class TestBatch(unittest.TestCase):
       parts = e.content.split(boundary)
       self.assertEqual(4, len(parts))
       self.assertEqual('', parts[0])
-      self.assertEqual('--', parts[3])
+      self.assertEqual('--\n', parts[3])
       header = parts[1].splitlines()[1]
       self.assertEqual('Content-Type: application/http', header)
 
@@ -951,6 +954,7 @@ class TestRequestUriTooLong(unittest.TestCase):
 
     # Extra headers should be set.
     response = req.execute()
+    response = simplejson.loads(response.decode())
     self.assertEqual('GET', response['x-http-method-override'])
     self.assertEqual(str(MAX_URI_LENGTH + 8), response['content-length'])
     self.assertEqual(
