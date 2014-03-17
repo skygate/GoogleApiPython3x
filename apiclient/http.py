@@ -1083,7 +1083,7 @@ class BatchHttpRequest(object):
     # Construct status line
     parsed = urllib.parse.urlparse(request.uri)
     request_line = urllib.parse.urlunparse(
-        (None, None, parsed.path, parsed.params, parsed.query, None)
+        ('', '', parsed.path, parsed.params, parsed.query, '')
         )
     status_line = request.method + ' ' + request_line + ' HTTP/1.1\n'
     major, minor = request.headers.get('content-type', 'application/json').split('/')
@@ -1112,13 +1112,17 @@ class BatchHttpRequest(object):
     # maxheaderlen=0 means don't line wrap headers.
     g = Generator(fp, maxheaderlen=0)
     g.flatten(msg, unixfrom=False)
+
     body = fp.getvalue()
 
     # Strip off the \n\n that the MIME lib tacks onto the end of the payload.
     if request.body is None:
       body = body[:-2]
-
-    return status_line.encode('utf-8') + body
+    try: 
+      return_line = status_line.encode('utf-8') + body
+    except TypeError:
+      return_line = status_line.encode('utf-8') + body.encode()
+    return return_line
 
   def _deserialize_response(self, payload):
     """Convert string into httplib2 response and content.
@@ -1246,7 +1250,10 @@ class BatchHttpRequest(object):
 
     # Prepend with a content-type header so FeedParser can handle it.
     header = 'content-type: %s\r\n\r\n' % resp['content-type']
-    for_parser = header + content
+    try:
+      for_parser = header + content
+    except TypeError:
+      for_parser = header + content.decode()
 
     parser = FeedParser()
     parser.feed(for_parser)
@@ -1523,7 +1530,7 @@ class HttpMockSequence(object):
       if hasattr(body, 'read'):
         content = bytes(body.read())
       else:
-        content = bytes(body)
+        content = body
     elif content == 'echo_request_uri':
       content = uri.encode()
     elif type(content) == str:
