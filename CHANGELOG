@@ -1,3 +1,6 @@
+v3.1
+  Fixes to OAuth code and packaging for installation via pip
+
 v3.0
   Version 3.0
   
