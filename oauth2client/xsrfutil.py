@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python
 #
 # Copyright 2010 the Melange authors.
 #
@@ -52,17 +52,17 @@ def generate_token(key, user_id, action_id="", when=None):
     A string XSRF protection token.
   """
   when = when or int(time.time())
-  digester = hmac.new(key.encode())
-  digester.update(str(user_id).encode())
-  digester.update(DELIMITER.encode())
-  digester.update(action_id.encode())
-  digester.update(DELIMITER.encode())
-  digester.update(str(when).encode())
+  digester = hmac.new(key)
+  digester.update(str(user_id))
+  digester.update(DELIMITER)
+  digester.update(action_id)
+  digester.update(DELIMITER)
+  digester.update(str(when))
   digest = digester.digest()
 
-  token = base64.urlsafe_b64encode(('%s%s%d' % (digest,
+  token = base64.urlsafe_b64encode('%s%s%d' % (digest,
                                                DELIMITER,
-                                               when)).encode()).decode()
+                                               when))
   return token
 
 
@@ -87,7 +87,7 @@ def validate_token(key, token, user_id, action_id="", current_time=None):
   if not token:
     return False
   try:
-    decoded = base64.urlsafe_b64decode(token).decode()
+    decoded = base64.urlsafe_b64decode(str(token))
     token_time = int(decoded.split(DELIMITER)[-1])
   except (TypeError, ValueError):
     return False

@@ -56,6 +56,7 @@ DEFAULT_CHUNK_SIZE = 512*1024
 
 MAX_URI_LENGTH = 2048
 
+logging.basicConfig(level=logging.DEBUG)
 
 class MediaUploadProgress(object):
   """Status of a resumable upload."""
@@ -544,7 +545,7 @@ class MediaIoBaseDownload(object):
         logging.warning(
             'Retry #%d for media download: GET %s, following status: %d'
             % (retry_num, self._uri, resp.status))
-
+      #logger.debug(self._uri, headers)
       resp, content = http.request(self._uri, headers=headers)
       if resp.status < 500:
         break
@@ -711,7 +712,7 @@ class HttpRequest(object):
         self._sleep(self._rand() * 2**retry_num)
         logging.warning('Retry #%d for request: %s %s, following status: %d'
                         % (retry_num, self.method, self.uri, resp.status))
-
+      #logging.debug("uri=%s, method=%s, body=%s, headers=%s" %(self.uri,self.method,self.body,self.headers))
       resp, content = http.request(str(self.uri), method=str(self.method),
                                    body=self.body, headers=self.headers)
       if resp.status < 500:
@@ -1083,7 +1084,7 @@ class BatchHttpRequest(object):
     # Construct status line
     parsed = urllib.parse.urlparse(request.uri)
     request_line = urllib.parse.urlunparse(
-        ('', '', parsed.path, parsed.params, parsed.query, '')
+        (None, None, parsed.path, parsed.params, parsed.query, None)
         )
     status_line = request.method + ' ' + request_line + ' HTTP/1.1\n'
     major, minor = request.headers.get('content-type', 'application/json').split('/')
@@ -1112,17 +1113,13 @@ class BatchHttpRequest(object):
     # maxheaderlen=0 means don't line wrap headers.
     g = Generator(fp, maxheaderlen=0)
     g.flatten(msg, unixfrom=False)
-
     body = fp.getvalue()
 
     # Strip off the \n\n that the MIME lib tacks onto the end of the payload.
     if request.body is None:
       body = body[:-2]
-    try: 
-      return_line = status_line.encode('utf-8') + body
-    except TypeError:
-      return_line = status_line.encode('utf-8') + body.encode()
-    return return_line
+
+    return status_line.encode('utf-8') + body
 
   def _deserialize_response(self, payload):
     """Convert string into httplib2 response and content.
@@ -1250,10 +1247,7 @@ class BatchHttpRequest(object):
 
     # Prepend with a content-type header so FeedParser can handle it.
     header = 'content-type: %s\r\n\r\n' % resp['content-type']
-    try:
-      for_parser = header + content
-    except TypeError:
-      for_parser = header + content.decode()
+    for_parser = header + content
 
     parser = FeedParser()
     parser.feed(for_parser)
@@ -1456,11 +1450,11 @@ class HttpMock(object):
     if headers is None:
       headers = {'status': '200 OK'}
     if filename:
-      f = open(filename, 'r')
+      f = file(filename, 'r')
       self.data = f.read()
       f.close()
     else:
-      self.data = b''
+      self.data = None
     self.response_headers = headers
     self.headers = None
     self.uri = None
@@ -1475,7 +1469,6 @@ class HttpMock(object):
               headers=None,
               redirections=1,
               connection_type=None):
-
     self.uri = uri
     self.method = method
     self.body = body
@@ -1523,21 +1516,16 @@ class HttpMockSequence(object):
               connection_type=None):
     resp, content = self._iterable.pop(0)
     if content == 'echo_request_headers':
-      content = simplejson.dumps(headers).encode()
+      content = headers
     elif content == 'echo_request_headers_as_json':
-      content = simplejson.dumps(headers).encode()
+      content = simplejson.dumps(headers)
     elif content == 'echo_request_body':
       if hasattr(body, 'read'):
-        content = bytes(body.read())
+        content = body.read()
       else:
         content = body
     elif content == 'echo_request_uri':
-      content = uri.encode()
-    elif type(content) == str:
-      content = content.encode()
-    else:
-      content = bytes(content)
-
+      content = uri
     return httplib2.Response(resp), content
 
 

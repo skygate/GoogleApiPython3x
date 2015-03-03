@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 #
 # Copyright (C) 2010 Google Inc.
 #
@@ -258,8 +258,7 @@ class JsonModel(BaseModel):
     return simplejson.dumps(body_value)
 
   def deserialize(self, content):
-    if type(content) is bytes:
-        content = content.decode('utf-8')
+    content = content.decode('utf-8')
     body = simplejson.loads(content)
     if self._data_wrapper and isinstance(body, dict) and 'data' in body:
       body = body['data']

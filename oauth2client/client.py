@@ -45,13 +45,13 @@ try:
   if crypt.OpenSSLVerifier is not None:
     HAS_OPENSSL = True
 except ImportError:
-  pass
+  print(HAS_OPENSSL, HAS_CRYPTO)
 
 try:
   from urllib.parse import parse_qsl
 except ImportError:
   from cgi import parse_qsl
-
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Expiry is stored in RFC3339 UTC format
@@ -471,7 +471,7 @@ class OAuth2Credentials(Credentials):
                     redirections=httplib2.DEFAULT_MAX_REDIRECTS,
                     connection_type=None):
       if not self.access_token:
-        logger.info('Attempting refresh to obtain initial access_token')
+        #logger.info('Attempting refresh to obtain initial access_token')
         self._refresh(request_orig)
 
       # Modify the request headers to add the appropriate
@@ -485,12 +485,13 @@ class OAuth2Credentials(Credentials):
           headers['user-agent'] = self.user_agent + ' ' + headers['user-agent']
         else:
           headers['user-agent'] = self.user_agent
+      #logger.debug("JAN headers=%s" % headers)
 
       resp, content = request_orig(uri, method, body, clean_headers(headers),
                                    redirections, connection_type)
 
       if resp.status in REFRESH_STATUS_CODES:
-        logger.info('Refreshing due to a %s' % str(resp.status))
+        #logger.info('Refreshing due to a %s' % str(resp.status))
         self._refresh(request_orig)
         self.apply(headers)
         return request_orig(uri, method, body, clean_headers(headers),
@@ -582,8 +583,7 @@ class OAuth2Credentials(Credentials):
 
     now = datetime.datetime.utcnow()
     if now >= self.token_expiry:
-      logger.info('access_token is expired. Now: %s, token_expiry: %s',
-                  now, self.token_expiry)
+      #logger.info('access_token is expired. Now: %s, token_expiry: %s', now, self.token_expiry)
       return True
     return False
 
@@ -677,13 +677,12 @@ class OAuth2Credentials(Credentials):
     body = self._generate_refresh_request_body()
     headers = self._generate_refresh_request_headers()
 
-    logger.info('Refreshing access_token')
+    #logger.info('Refreshing access_token')
     resp, content = http_request(
         self.token_uri, method='POST', body=body, headers=headers)
-    content = content.decode()
     if resp.status == 200:
       # TODO(jcgregorio) Raise an error if loads fails?
-      d = simplejson.loads(content)
+      d = simplejson.loads(content.decode())
       self.token_response = d
       self.access_token = d['access_token']
       self.refresh_token = d.get('refresh_token', self.refresh_token)
@@ -740,7 +739,7 @@ class OAuth2Credentials(Credentials):
     else:
       error_msg = 'Invalid response %s.' % resp.status
       try:
-        d = simplejson.loads(content.decode())
+        d = simplejson.loads(content)
         if 'error' in d:
           error_msg = d['error']
       except Exception:
@@ -971,9 +970,9 @@ if HAS_CRYPTO:
           'iss': self.service_account_name
       }
       payload.update(self.kwargs)
-      logger.debug(str(payload))
+      #logger.debug(str(payload))
 
-      private_key = base64.b64decode(self.private_key)
+      private_key = base64.b64decode(self.private_key) #.decode(encoding='utf-8')
       return crypt.make_signed_jwt(crypt.Signer.from_string(
           private_key, self.private_key_password), payload)
 
@@ -1009,7 +1008,7 @@ if HAS_CRYPTO:
     resp, content = http.request(cert_uri)
 
     if resp.status == 200:
-      certs = simplejson.loads(content.decode())
+      certs = simplejson.loads(content)
       return crypt.verify_signed_jwt_with_certs(id_token, certs, audience)
     else:
       raise VerifyJwtTokenError('Status code: %d' % resp.status)
@@ -1017,9 +1016,9 @@ if HAS_CRYPTO:
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode().decode('ascii')
+  b64string = b64string.encode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded).decode()
+  return base64.urlsafe_b64decode(padded)
 
 
 def _extract_id_token(id_token):
@@ -1279,10 +1278,8 @@ class OAuth2WebServerFlow(Flow):
 
     if http is None:
       http = httplib2.Http()
-
     resp, content = http.request(self.token_uri, method='POST', body=body,
                                  headers=headers)
-    content = content.decode()
     d = _parse_exchange_token_response(content)
     if resp.status == 200 and 'access_token' in d:
       access_token = d['access_token']
@@ -1295,7 +1292,7 @@ class OAuth2WebServerFlow(Flow):
       if 'id_token' in d:
         d['id_token'] = _extract_id_token(d['id_token'])
 
-      logger.info('Successfully retrieved access token')
+      #logger.info('Successfully retrieved access token')
       return OAuth2Credentials(access_token, self.client_id,
                                self.client_secret, refresh_token, token_expiry,
                                self.token_uri, self.user_agent,
@@ -1303,7 +1300,7 @@ class OAuth2WebServerFlow(Flow):
                                id_token=d.get('id_token', None),
                                token_response=d)
     else:
-      logger.info('Failed to retrieve access token: %s' % content)
+      #logger.info('Failed to retrieve access token: %s' % content)
       if 'error' in d:
         # you never know what those providers got to say
         error_msg = str(d['error'])

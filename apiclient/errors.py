@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 #
 # Copyright (C) 2010 Google Inc.
 #
@@ -38,16 +38,14 @@ class HttpError(Error):
   @util.positional(3)
   def __init__(self, resp, content, uri=None):
     self.resp = resp
-    if type(content) is bytes:
-        self.content = content.decode(encoding='UTF-8')
-    else: self.content = content
+    self.content = content
     self.uri = uri
 
   def _get_reason(self):
     """Calculate the reason for the error from the response content."""
     reason = self.resp.reason
     try:
-      data = simplejson.loads(self.content)
+      data = simplejson.loads(self.content.decode())
       reason = data['error']['message']
     except (ValueError, KeyError):
       pass

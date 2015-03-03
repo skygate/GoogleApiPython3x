@@ -37,7 +37,7 @@ import os
 import re
 import urllib.request, urllib.parse, urllib.error
 import urllib.parse
-
+logging.basicConfig(level=logging.DEBUG)
 try:
   from urllib.parse import parse_qsl
 except ImportError:
@@ -138,7 +138,6 @@ def key2param(key):
 
   return ''.join(result)
 
-
 @positional(2)
 def build(serviceName,
           version,
@@ -187,12 +186,10 @@ def build(serviceName,
   if 'REMOTE_ADDR' in os.environ:
     requested_url = _add_query_parameter(requested_url, 'userIp',
                                          os.environ['REMOTE_ADDR'])
-  logger.info('URL being requested: %s' % requested_url)
+  #logger.info('1 URL being requested: %s' % requested_url)
 
   resp, content = http.request(requested_url)
-  if type(content) is bytes:
-    content = content.decode(encoding='UTF-8')
-
+  #logger.debug("resp, content: %s,%s" % (resp,content))
   if resp.status == 404:
     raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
                                                             version))
@@ -200,7 +197,7 @@ def build(serviceName,
     raise HttpError(resp, content, uri=requested_url)
 
   try:
-    service = simplejson.loads(content)
+    service = simplejson.loads(content.decode())
   except ValueError as e:
     logger.error('Failed to parse as JSON: ' + content)
     raise InvalidJsonError()
@@ -245,7 +242,7 @@ def build_from_document(
 
   # future is no longer used.
   future = {}
-
+  service = service.decode()
   if isinstance(service, str):
     service = simplejson.loads(service)
   base = urllib.parse.urljoin(service['rootUrl'], service['servicePath'])
@@ -708,7 +705,8 @@ def createMethod(methodName, methodDesc, rootDesc, schema):
                                      'boundary="%s"') % multipart_boundary
           url = _add_query_parameter(url, 'uploadType', 'multipart')
 
-    logger.info('URL being requested: %s' % url)
+    #logger.info('2 URL being requested: %s' % url)
+    #logger.debug("method=%s, body=%s, headers=%s, methodId=%s, resumable=%s" % (httpMethod, body, headers, methodId, resumable))
     return self._requestBuilder(self._http,
                                 model.response,
                                 url,
@@ -816,7 +814,7 @@ Returns:
 
     request.uri = uri
 
-    logger.info('URL being requested: %s' % uri)
+    #logger.info('3 URL being requested: %s' % uri)
 
     return request
 

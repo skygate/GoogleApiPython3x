@@ -72,7 +72,7 @@ class Storage(BaseStorage):
     self._validate_file()
     try:
       f = open(self._filename, 'rb')
-      content = f.read().decode()
+      content = f.read()
       f.close()
     except IOError:
       return credentials
@@ -111,7 +111,7 @@ class Storage(BaseStorage):
     self._create_file_if_needed()
     self._validate_file()
     f = open(self._filename, 'wb')
-    f.write(credentials.to_json().encode())
+    f.write(credentials.to_json())
     f.close()
 
   def locked_delete(self):

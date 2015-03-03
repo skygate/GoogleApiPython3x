@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2011 Google Inc.
@@ -27,7 +27,7 @@ CLOCK_SKEW_SECS = 300  # 5 minutes in seconds
 AUTH_TOKEN_LIFETIME_SECS = 300  # 5 minutes in seconds
 MAX_TOKEN_LIFETIME_SECS = 86400  # 1 day in seconds
 
-
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -125,7 +125,7 @@ try:
       Raises:
         OpenSSL.crypto.Error if the key can't be parsed.
       """
-      if key.startswith('-----BEGIN '):
+      if key.decode().startswith('-----BEGIN '):
         pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, key)
       else:
         pkey = crypto.load_pkcs12(key, password).get_privatekey()
@@ -262,13 +262,13 @@ def _urlsafe_b64encode(raw_bytes):
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode().decode('ascii')
+  b64string = b64string.encode('ascii')
   padded = b64string + '=' * (4 - len(b64string) % 4)
-  return base64.urlsafe_b64decode(padded).decode()
+  return base64.urlsafe_b64decode(padded)
 
 
 def _json_encode(data):
-  return simplejson.dumps(data, separators = (',', ':'))
+  return simplejson.dumps(data, separators = (',', ':')).encode()
 
 
 def make_signed_jwt(signer, payload):
@@ -286,17 +286,17 @@ def make_signed_jwt(signer, payload):
   header = {'typ': 'JWT', 'alg': 'RS256'}
 
   segments = [
-          _urlsafe_b64encode(_json_encode(header)),
-          _urlsafe_b64encode(_json_encode(payload)),
+          base64.urlsafe_b64encode(_json_encode(header)),
+          base64.urlsafe_b64encode(_json_encode(payload)),
   ]
-  signing_input = '.'.join(segments)
+  signing_input = b'.'.join(segments)
 
   signature = signer.sign(signing_input)
-  segments.append(_urlsafe_b64encode(signature))
+  segments.append(base64.urlsafe_b64encode(signature))
 
-  logger.debug(str(segments))
+  #logger.debug(str(segments))
 
-  return '.'.join(segments)
+  return b'.'.join(segments)
 
 
 def verify_signed_jwt_with_certs(jwt, certs, audience):
