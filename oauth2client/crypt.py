@@ -230,7 +230,7 @@ try:
       Raises:
         NotImplementedError if they key isn't in PEM format.
       """
-      if key.startswith('-----BEGIN '):
+      if key.startswith(b'-----BEGIN '):
         pkey = RSA.importKey(key)
       else:
         raise NotImplementedError(
